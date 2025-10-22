@@ -1,0 +1,155 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: left;
+  position: relative;
+  z-index: 1;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+  background: var(--neo-surface);
+  border: 2px solid var(--neo-border);
+  box-shadow: 10px 10px 0 0 rgba(76, 194, 255, 0.2);
+  border-radius: 10px;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* Neo‑brutalist PS2 theme */
+:root {
+  --neo-bg: #0a0b10;
+  --neo-surface: #0f1116;
+  --neo-border: #202636;
+  --neo-text: #e6f0ff;
+  --neo-accent: #4cc2ff; /* PS2 neon blue */
+  --neo-accent-2: #ff3df0; /* neon magenta */
+  --neo-accent-3: #39ff14; /* neon green */
+}
+
+html, body {
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(76, 194, 255, 0.15), transparent 60%),
+    radial-gradient(900px 500px at 100% 10%, rgba(255, 61, 240, 0.08), transparent 60%),
+    linear-gradient(180deg, #07080d 0%, var(--neo-bg) 100%);
+  color: var(--neo-text);
+}
+
+/* CRT scanlines overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 3px,
+      transparent 4px
+    );
+  mix-blend-mode: overlay;
+  opacity: 0.35;
+  z-index: 0;
+}
+
+h1, h2, h3 {
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 10px rgba(76, 194, 255, 0.3);
+}
+
+/* Buttons */
+button {
+  background: var(--neo-surface);
+  color: var(--neo-text);
+  border: 2px solid var(--neo-accent);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  box-shadow: 6px 6px 0 0 rgba(76, 194, 255, 0.25);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 10px 10px 0 0 rgba(57, 255, 20, 0.22);
+}
+button:disabled {
+  opacity: 0.6;
+  filter: grayscale(0.2);
+  box-shadow: 4px 4px 0 0 rgba(128, 128, 128, 0.2);
+  transform: none;
+}
+
+/* Tables */
+table {
+  background: var(--neo-surface);
+  border: 2px solid var(--neo-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+th {
+  background: linear-gradient(180deg, #121726 0%, #0f1422 100%);
+  color: var(--neo-text);
+  border-bottom: 2px solid var(--neo-accent);
+  padding: 10px;
+}
+td {
+  padding: 10px;
+  border-bottom: 1px solid var(--neo-border);
+}
+tbody tr:hover {
+  background: rgba(76, 194, 255, 0.06);
+}
+
+code {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--neo-border);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+/* Header */
+.neo-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 2px solid var(--neo-accent);
+  background: linear-gradient(180deg, #0f1116 0%, #0b0d12 100%);
+  border-radius: 12px;
+  box-shadow: 12px 12px 0 0 rgba(76, 194, 255, 0.25);
+}
