@@ -1,0 +1,44 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- PS2 Inspired Logo -->
+  <defs>
+    <linearGradient id="ps2Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4cc2ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2a7fbf;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- PlayStation 2 inspired design -->
+  <g filter="url(#glow)">
+    <!-- P -->
+    <path d="M10 15 L10 45 L25 45 L25 40 L15 40 L15 32 L23 32 L23 27 L15 27 L15 20 L25 20 L25 15 Z" 
+          fill="url(#ps2Gradient)" stroke="#4cc2ff" stroke-width="1"/>
+    
+    <!-- S -->
+    <path d="M32 15 L32 20 L42 20 L42 27 L32 27 L32 45 L52 45 L52 40 L37 40 L37 32 L52 32 L52 15 Z" 
+          fill="url(#ps2Gradient)" stroke="#4cc2ff" stroke-width="1"/>
+    
+    <!-- 2 -->
+    <path d="M59 15 L59 20 L69 20 L69 27 L59 27 L59 45 L79 45 L79 40 L64 40 L64 32 L79 32 L79 15 Z" 
+          fill="url(#ps2Gradient)" stroke="#4cc2ff" stroke-width="1"/>
+    
+    <!-- Controller icon -->
+    <g transform="translate(100, 15)">
+      <rect x="5" y="10" width="80" height="20" rx="10" fill="url(#ps2Gradient)" opacity="0.3"/>
+      <circle cx="25" cy="20" r="8" fill="#4cc2ff" opacity="0.6"/>
+      <circle cx="65" cy="20" r="8" fill="#4cc2ff" opacity="0.6"/>
+      <rect x="40" y="15" width="10" height="10" fill="#4cc2ff" opacity="0.5"/>
+    </g>
+  </g>
+  
+  <!-- Manager text -->
+  <text x="10" y="55" font-family="Arial, sans-serif" font-size="10" fill="#4cc2ff" opacity="0.8">
+    MANAGER
+  </text>
+</svg>

@@ -1,5 +1,6 @@
 use std::fs::{self, File};
 use std::path::PathBuf;
+use std::env;
 
 use image::ImageFormat;
 
@@ -17,23 +18,31 @@ fn normalize_ids(id: &str) -> Vec<String> {
   parts
 }
 
+fn build_artwork_urls(candidates: Vec<String>) -> Vec<String> {
+  let mut urls: Vec<String> = Vec::new();
+  let api_key = env::var("GAMETDB_API_KEY").ok();
+  let key_param = api_key.map(|k| format!("?api_key={}", k)).unwrap_or_default();
+  
+  for cid in candidates {
+    urls.push(format!("https://art.gametdb.com/ps2/cover2/{}.png{}", cid, key_param));
+    urls.push(format!("https://art.gametdb.com/ps2/cover2/US/{}.png{}", cid, key_param));
+    urls.push(format!("https://art.gametdb.com/ps2/cover2/EN/{}.png{}", cid, key_param));
+    urls.push(format!("https://art.gametdb.com/ps2/cover/{}.png{}", cid, key_param));
+  }
+  urls
+}
+
 #[tauri::command]
 pub fn auto_fetch_cover(opl_root: String, game_id: String, _title_guess: Option<String>, force: bool) -> Result<String, String> {
   let id = game_id.trim().to_uppercase();
   if id.is_empty() { return Err("missing id".into()); }
   let art_dir = PathBuf::from(&opl_root).join("ART");
   fs::create_dir_all(&art_dir).map_err(|e| e.to_string())?;
-  let dest = art_dir.join(format!("{}.png", id));
-  if dest.exists() && !force { return Ok(dest.to_string_lossy().to_string()); }
+  let destination = art_dir.join(format!("{}.png", id));
+  if destination.exists() && !force { return Ok(destination.to_string_lossy().to_string()); }
 
   let candidates = normalize_ids(&id);
-  let mut urls: Vec<String> = Vec::new();
-  for cid in candidates {
-    urls.push(format!("https://art.gametdb.com/ps2/cover2/{}.png", cid));
-    urls.push(format!("https://art.gametdb.com/ps2/cover2/US/{}.png", cid));
-    urls.push(format!("https://art.gametdb.com/ps2/cover2/EN/{}.png", cid));
-    urls.push(format!("https://art.gametdb.com/ps2/cover/{}.png", cid));
-  }
+  let urls = build_artwork_urls(candidates);
 
   // Try downloads in order
   for u in urls {
@@ -41,9 +50,9 @@ pub fn auto_fetch_cover(opl_root: String, game_id: String, _title_guess: Option<
       if resp.status().is_success() {
         if let Ok(bytes) = resp.bytes() {
           if let Ok(img) = image::load_from_memory(&bytes) {
-            let mut f = File::create(&dest).map_err(|e| e.to_string())?;
-            if let Err(e) = img.write_to(&mut f, ImageFormat::Png) { return Err(e.to_string()); }
-            return Ok(dest.to_string_lossy().to_string());
+            let mut file = File::create(&destination).map_err(|error| error.to_string())?;
+            if let Err(error) = img.write_to(&mut file, ImageFormat::Png) { return Err(error.to_string()); }
+            return Ok(destination.to_string_lossy().to_string());
           }
         }
       }

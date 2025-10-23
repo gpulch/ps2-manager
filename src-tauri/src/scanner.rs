@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -11,7 +11,7 @@ const LIB_SCAN_MAX_VISITED: u64 = 50_000;
 const VALIDATE_MAX_DEPTH: u32 = 4;
 const VALIDATE_MAX_VISITED: u64 = 20_000;
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameInfo {
   pub path: String,
   pub file_name: String,
@@ -115,17 +115,13 @@ fn scan_iso_any(root: &Path, path: &Path) -> GameInfo {
   scan_iso(root, path, kind)
 }
 
-fn scan_dir(root: &Path, dir: &Path, kind: &str, out: &mut Vec<GameInfo>) {
-  if let Ok(entries) = fs::read_dir(dir) {
-    for e in entries.flatten() {
-      let p = e.path();
-      if fs::symlink_metadata(&p).map(|m| m.file_type().is_symlink()).unwrap_or(false) { continue; }
-      if p.is_file() {
-        if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
-          if ext.eq_ignore_ascii_case("iso") {
-            out.push(scan_iso(root, &p, kind));
-          }
-        }
+fn scan_directory(root: &Path, directory: &Path, kind: &str, output: &mut Vec<GameInfo>) {
+  if let Ok(entries) = fs::read_dir(directory) {
+    for entry in entries.flatten() {
+      let current_path = entry.path();
+      if fs::symlink_metadata(&current_path).map(|metadata| metadata.file_type().is_symlink()).unwrap_or(false) { continue; }
+      if current_path.is_file() && current_path.extension().and_then(|extension| extension.to_str()).map(|extension| extension.eq_ignore_ascii_case("iso")).unwrap_or(false) {
+        output.push(scan_iso(root, &current_path, kind));
       }
     }
   }
@@ -137,25 +133,9 @@ pub fn scan_opl_games(opl_root: String) -> Vec<GameInfo> {
   let mut games: Vec<GameInfo> = Vec::new();
   let dvd = root.join("DVD");
   let cd = root.join("CD");
-  if dvd.is_dir() { scan_dir(&root, &dvd, "DVD", &mut games); }
-  if cd.is_dir() { scan_dir(&root, &cd, "CD", &mut games); }
+  if dvd.is_dir() { scan_directory(&root, &dvd, "DVD", &mut games); }
+  if cd.is_dir() { scan_directory(&root, &cd, "CD", &mut games); }
   games
-}
-
-fn scan_folder_recursive(root: &Path, dir: &Path, out: &mut Vec<GameInfo>) {
-  if let Ok(entries) = fs::read_dir(dir) {
-    for e in entries.flatten() {
-      let p = e.path();
-      if fs::symlink_metadata(&p).map(|m| m.file_type().is_symlink()).unwrap_or(false) { continue; }
-      if p.is_dir() {
-        scan_folder_recursive(root, &p, out);
-      } else if p.is_file() {
-        if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
-          if ext.eq_ignore_ascii_case("iso") { out.push(scan_iso_any(root, &p)); }
-        }
-      }
-    }
-  }
 }
 
 #[tauri::command]
@@ -163,25 +143,25 @@ pub fn scan_folder_games(folder: String) -> Vec<GameInfo> {
   let root = PathBuf::from(&folder);
   let mut games: Vec<GameInfo> = Vec::new();
   if root.is_dir() {
-    let mut visited: u64 = 0;
-    scan_folder_recursive_limited(&root, &root, 0, LIB_SCAN_MAX_DEPTH, &mut visited, LIB_SCAN_MAX_VISITED, &mut games);
+    let mut visited_count: u64 = 0;
+    scan_folder_recursive_limited(&root, &root, 0, LIB_SCAN_MAX_DEPTH, &mut visited_count, LIB_SCAN_MAX_VISITED, &mut games);
   }
   games
 }
 
-fn scan_folder_recursive_limited(root: &Path, dir: &Path, depth: u32, max_depth: u32, visited: &mut u64, max_visited: u64, out: &mut Vec<GameInfo>) {
-  if *visited >= max_visited || depth > max_depth { return; }
-  if let Ok(entries) = fs::read_dir(dir) {
-    for e in entries.flatten() {
-      if *visited >= max_visited { return; }
-      *visited += 1;
-      let p = e.path();
-      if fs::symlink_metadata(&p).map(|m| m.file_type().is_symlink()).unwrap_or(false) { continue; }
-      if p.is_dir() {
-        scan_folder_recursive_limited(root, &p, depth + 1, max_depth, visited, max_visited, out);
-      } else if p.is_file() {
-        if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
-          if ext.eq_ignore_ascii_case("iso") { out.push(scan_iso_any(root, &p)); }
+fn scan_folder_recursive_limited(root: &Path, directory: &Path, depth: u32, maximum_depth: u32, visited_count: &mut u64, maximum_visited: u64, output: &mut Vec<GameInfo>) {
+  if *visited_count >= maximum_visited || depth > maximum_depth { return; }
+  if let Ok(entries) = fs::read_dir(directory) {
+    for entry in entries.flatten() {
+      if *visited_count >= maximum_visited { return; }
+      *visited_count += 1;
+      let current_path = entry.path();
+      if fs::symlink_metadata(&current_path).map(|metadata| metadata.file_type().is_symlink()).unwrap_or(false) { continue; }
+      if current_path.is_dir() {
+        scan_folder_recursive_limited(root, &current_path, depth + 1, maximum_depth, visited_count, maximum_visited, output);
+      } else if current_path.is_file() {
+        if let Some(extension) = current_path.extension().and_then(|s| s.to_str()) {
+          if extension.eq_ignore_ascii_case("iso") { output.push(scan_iso_any(root, &current_path)); }
         }
       }
     }
@@ -204,7 +184,7 @@ pub fn validate_library_folder(folder: String) -> LibraryValidation {
   let mut file_count: u32 = 0;
   let mut dir_count: u32 = 0;
   let mut warnings: Vec<String> = Vec::new();
-  let mut ok = true;
+  let ok = true; // Empty folders are now acceptable
 
   if !root.is_dir() {
     return LibraryValidation { iso_count: 0, dir_count: 0, file_count: 0, warnings: vec!["not a directory".into()], ok: false };
@@ -242,10 +222,15 @@ pub fn validate_library_folder(folder: String) -> LibraryValidation {
 
   visit(&root, 0, max_depth, &mut visited, max_visited, &mut iso_count, &mut file_count, &mut dir_count);
 
-  if iso_count == 0 {
-    warnings.push("No .iso files found in the selected folder".into());
-    ok = false;
+  // Allow empty folders - just warn the user
+  if iso_count == 0 && file_count == 0 {
+    warnings.push("Folder is empty - you can download games to it".into());
+    // ok remains true - empty folders are acceptable
+  } else if iso_count == 0 {
+    warnings.push("No .iso files found yet - you can download games here".into());
+    // ok remains true - folders without ISOs are acceptable
   }
+  
   if visited >= max_visited {
     warnings.push("Folder seems very large; scanning was limited".into());
   }

@@ -17,14 +17,12 @@ fn expected_dir_for_size(size: u64) -> &'static str {
   if size <= CD_MAX_BYTES { "CD" } else { "DVD" }
 }
 
-fn collect_isos(dir: &Path, out: &mut Vec<PathBuf>) {
-  if let Ok(rd) = fs::read_dir(dir) {
-    for e in rd.flatten() {
-      let p = e.path();
-      if p.is_file() {
-        if p.extension().and_then(|s| s.to_str()).map(|s| s.eq_ignore_ascii_case("iso")).unwrap_or(false) {
-          out.push(p);
-        }
+fn collect_isos(directory: &Path, output: &mut Vec<PathBuf>) {
+  if let Ok(read_directory) = fs::read_dir(directory) {
+    for entry in read_directory.flatten() {
+      let path = entry.path();
+      if path.is_file() && path.extension().and_then(|extension| extension.to_str()).map(|extension| extension.eq_ignore_ascii_case("iso")).unwrap_or(false) {
+        output.push(path);
       }
     }
   }
@@ -56,8 +54,8 @@ pub fn preview_organize(opl_root: String) -> Vec<OrganizeProposal> {
 
     // Build destination path (keep same filename)
     let file_name = p.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "game.iso".into());
-    let dest = root.join(expected_dir).join(file_name);
-    let to = dest.to_string_lossy().to_string();
+    let destination = root.join(expected_dir).join(file_name);
+    let to = destination.to_string_lossy().to_string();
     let reason = if expected_dir == "CD" { "size <= 800MiB" } else { "size > 800MiB" }.to_string();
     res.push(OrganizeProposal { from, to, will_move: true, reason, error: None });
   }

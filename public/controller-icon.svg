@@ -1,0 +1,46 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="controllerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4cc2ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2d89d3;stop-opacity:1" />
+    </linearGradient>
+    <filter id="ctrlGlow">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- PS2 DualShock inspired controller -->
+  <g filter="url(#ctrlGlow)">
+    <!-- Main body -->
+    <path d="M8 20 L8 32 C8 36 10 40 16 40 L20 40 L20 52 C20 54 22 56 24 56 L40 56 C42 56 44 54 44 52 L44 40 L48 40 C54 40 56 36 56 32 L56 20 C56 16 54 12 48 12 L16 12 C10 12 8 16 8 20 Z" 
+          fill="url(#controllerGrad)" stroke="#4cc2ff" stroke-width="1.5" opacity="0.9"/>
+    
+    <!-- Left grip -->
+    <ellipse cx="20" cy="44" rx="6" ry="10" fill="#2d89d3" opacity="0.7"/>
+    
+    <!-- Right grip -->
+    <ellipse cx="44" cy="44" rx="6" ry="10" fill="#2d89d3" opacity="0.7"/>
+    
+    <!-- D-pad -->
+    <circle cx="24" cy="26" r="8" fill="#1a4d73" opacity="0.8"/>
+    <path d="M24 20 L24 32 M18 26 L30 26" stroke="#4cc2ff" stroke-width="2" stroke-linecap="round"/>
+    
+    <!-- Buttons -->
+    <circle cx="40" cy="26" r="8" fill="#1a4d73" opacity="0.8"/>
+    <circle cx="36" cy="26" r="2" fill="#39ff14" opacity="0.9"/>
+    <circle cx="44" cy="26" r="2" fill="#ff3df0" opacity="0.9"/>
+    <circle cx="40" cy="22" r="2" fill="#4cc2ff" opacity="0.9"/>
+    <circle cx="40" cy="30" r="2" fill="#ff4d4d" opacity="0.9"/>
+    
+    <!-- Center buttons -->
+    <rect x="28" y="24" width="8" height="4" rx="1" fill="#1a4d73" opacity="0.6"/>
+    
+    <!-- Analog sticks -->
+    <circle cx="24" cy="38" r="4" fill="#1a4d73" opacity="0.7"/>
+    <circle cx="40" cy="38" r="4" fill="#1a4d73" opacity="0.7"/>
+  </g>
+</svg>

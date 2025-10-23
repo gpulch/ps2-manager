@@ -30,3 +30,52 @@ dist-ssr
 src-tauri/.env
 src-tauri/.env.*
 !src-tauri/.env.example
+
+# Sensitive data
+*secret*
+*credential*
+**/secrets/
+**/.secrets/
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Build artifacts
+target/
+dist/
+dist-ssr/
+build/
+out/
+
+# Platform-specific
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Tauri specific
+src-tauri/target/
+src-tauri/WixTools/
+src-tauri/gen/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# User-specific settings
+settings.json
+user-settings.json
+*.local.json

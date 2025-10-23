@@ -1,0 +1,26 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="diskGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4cc2ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2d89d3;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="diskCenter">
+      <stop offset="0%" style="stop-color:#1a4d73;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0a2d4d;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Disk outer ring -->
+  <circle cx="24" cy="24" r="20" fill="url(#diskGrad)" opacity="0.8"/>
+  <circle cx="24" cy="24" r="18" fill="none" stroke="#4cc2ff" stroke-width="2"/>
+  
+  <!-- Disk center hole -->
+  <circle cx="24" cy="24" r="6" fill="url(#diskCenter)"/>
+  <circle cx="24" cy="24" r="5" fill="none" stroke="#4cc2ff" stroke-width="1"/>
+  
+  <!-- Shine effect -->
+  <path d="M 18 10 Q 24 12, 30 10 L 32 14 Q 24 16, 16 14 Z" fill="rgba(255,255,255,0.2)"/>
+  
+  <!-- Label text area -->
+  <circle cx="24" cy="24" r="14" fill="none" stroke="rgba(76,194,255,0.2)" stroke-width="1" stroke-dasharray="2,2"/>
+</svg>

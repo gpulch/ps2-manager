@@ -16,8 +16,8 @@ export const useExportOps = ({ games }: { games: GameInfo[] }) => {
       const json = JSON.stringify(games, null, 2)
       const path = await invoke<string>('export_catalog_json', { dest_path: dest, json })
       setExportMsg(`Exported to ${path}`)
-    } catch (e: any) {
-      setExportMsg(String(e))
+    } catch (error) {
+      setExportMsg(String(error))
     } finally {
       setExporting(false)
     }

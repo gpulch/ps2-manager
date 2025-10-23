@@ -1,5 +1,8 @@
+import { useMemo } from 'react'
 import type { GameInfo } from '../types'
 import { Button } from '../ui/Button'
+import { PageLayout } from '../components/layout/PageLayout'
+import { calculateDashboardStats } from '../utils'
 
 type Props = {
   games: GameInfo[]
@@ -12,40 +15,40 @@ type Props = {
 }
 
 export const Dashboard = ({ games, onRescan, rescanning, onAutoFetchMissing, onExport, fetchProgress, exportMsg }: Props) => {
-  const total = games.length
-  const withCover = games.filter(g => g.has_cover).length
-  const missingCover = total - withCover
-  const warnings = games.reduce((acc, g) => acc + (g.warnings?.length || 0), 0)
+  // Memoize stats calculation to avoid recalculation on every render
+  const stats = useMemo(() => calculateDashboardStats(games), [games])
+  const { total, withCover, missingCover, warnings } = stats
 
   return (
-    <div className="section">
-      <h2>Dashboard</h2>
-      <div className="row gap-24">
-        <div className="card-ui">
+    <PageLayout title="Dashboard">
+      <div className="stats-grid">
+        <div className="card-ui stat-card">
           <div>Total games</div>
-          <h3 style={{ margin: 0 }}>{total}</h3>
+          <h3>{total}</h3>
         </div>
-        <div className="card-ui">
+        <div className="card-ui stat-card">
           <div>With cover</div>
-          <h3 style={{ margin: 0 }}>{withCover}</h3>
+          <h3>{withCover}</h3>
         </div>
-        <div className="card-ui">
+        <div className="card-ui stat-card">
           <div>Missing covers</div>
-          <h3 style={{ margin: 0 }}>{missingCover}</h3>
+          <h3>{missingCover}</h3>
         </div>
-        <div className="card-ui">
+        <div className="card-ui stat-card">
           <div>Warnings</div>
-          <h3 style={{ margin: 0 }}>{warnings}</h3>
+          <h3>{warnings}</h3>
         </div>
       </div>
 
-      <div className="row toolbar section">
-        <Button onClick={onRescan} disabled={rescanning}>{rescanning ? 'Rescanning...' : 'Rescan current source'}</Button>
-        <Button onClick={onAutoFetchMissing}>Auto-fetch missing covers</Button>
-        <Button onClick={onExport}>Export catalog JSON</Button>
-        {fetchProgress && <span><code>{fetchProgress}</code></span>}
-        {exportMsg && <span><code>{exportMsg}</code></span>}
+      <div className="section">
+        <div className="row toolbar">
+          <Button onClick={onRescan} disabled={rescanning}>{rescanning ? 'Rescanning...' : 'Rescan current source'}</Button>
+          <Button onClick={onAutoFetchMissing}>Auto-fetch missing covers</Button>
+          <Button onClick={onExport}>Export catalog JSON</Button>
+        </div>
+        {fetchProgress && <div style={{ marginTop: '8px' }}><code>{fetchProgress}</code></div>}
+        {exportMsg && <div style={{ marginTop: '8px' }}><code>{exportMsg}</code></div>}
       </div>
-    </div>
+    </PageLayout>
   )
 }

@@ -8,6 +8,13 @@ mod vmc;
 mod organizer;
 mod metadata;
 mod exporter;
+mod remote;
+mod file_validator;
+mod security;
+mod duplicates;
+mod backup;
+mod converter;
+mod cdda;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -43,6 +50,8 @@ pub fn run() {
       cheats::save_cht,
       cheats::import_cht,
       cheats::export_cht,
+      cheats::validate_cht_content,
+      cheats::get_cht_help,
       vmc::list_vmcs,
       vmc::import_vmc,
       vmc::export_vmc,
@@ -50,7 +59,22 @@ pub fn run() {
       organizer::preview_organize,
       organizer::apply_organize,
       metadata::auto_fetch_cover,
-      exporter::export_catalog_json
+      exporter::export_catalog_json,
+      remote::fetch_archive_org_games,
+      remote::download_remote_iso,
+      remote::download_remote_iso_with_progress,
+      remote::validate_remote_source,
+      remote::get_security_info,
+      duplicates::find_duplicate_games,
+      duplicates::get_duplicate_stats,
+      backup::create_backup,
+      backup::save_backup_to_file,
+      backup::load_backup_from_file,
+      backup::validate_backup,
+      backup::get_backup_info,
+      converter::convert_bin_to_iso,
+      converter::get_conversion_info,
+      cdda::detect_cdda,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

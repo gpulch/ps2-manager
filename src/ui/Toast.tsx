@@ -1,4 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useMemo, useState, type PropsWithChildren } from 'react'
+import { generateId, joinClasses } from '../utils'
 
 export type ToastVariant = 'info' | 'success' | 'warning' | 'danger'
 export type ToastItem = {
@@ -20,13 +22,11 @@ export const useToast = (): ToastContextValue => {
   return ctx
 }
 
-const uid = () => Math.random().toString(36).slice(2)
-
 export const ToastProvider = ({ children }: PropsWithChildren) => {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
   const show = useCallback((text: string, variant: ToastVariant = 'info', ttlMs = 3500) => {
-    const id = uid()
+    const id = generateId()
     setToasts(prev => [...prev, { id, text, variant, ttlMs }])
     window.setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), ttlMs)
   }, [])
@@ -38,7 +38,7 @@ export const ToastProvider = ({ children }: PropsWithChildren) => {
       {children}
       <div className="toast-container">
         {toasts.map(t => (
-          <div key={t.id} className={[`toast`, `toast--${t.variant}`].join(' ')}>{t.text}</div>
+          <div key={t.id} className={joinClasses('toast', `toast--${t.variant}`)}>{t.text}</div>
         ))}
       </div>
     </Ctx.Provider>

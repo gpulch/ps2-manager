@@ -1,6 +1,8 @@
 import type { GameInfo, RenameProposal } from '../types'
-import { SourceControls } from '../components/SourceControls'
-import { GamesSection } from '../components/GamesSection'
+import { SourceControls } from '../components/features/SourceControls'
+import { GamesSection } from '../components/shared/GamesSection'
+import { RemoteSourcesPanel } from '../components/features/remote/RemoteSourcesPanel'
+import { PageLayout } from '../components/layout/PageLayout'
 
 type Props = {
   activeSource: 'disk' | 'library'
@@ -33,8 +35,7 @@ type Props = {
 }
 
 export const LibraryView = (props: Props) => (
-  <div className="section">
-    <h2>Library</h2>
+  <PageLayout title="Library">
     <SourceControls
       activeSource={props.activeSource}
       libraryRoot={props.libraryRoot}
@@ -45,6 +46,11 @@ export const LibraryView = (props: Props) => (
       useLibraryForCheats={props.useLibraryForCheats}
       scanning={props.scanning}
       scanLibrary={props.scanLibrary}
+    />
+
+    <RemoteSourcesPanel 
+      libraryRoot={props.libraryRoot}
+      onDownloadComplete={props.onRescan}
     />
 
     {props.root && (
@@ -69,5 +75,5 @@ export const LibraryView = (props: Props) => (
         onCoverSaved={props.onCoverSaved}
       />
     )}
-  </div>
+  </PageLayout>
 )

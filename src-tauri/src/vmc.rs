@@ -17,55 +17,55 @@ fn to_epoch(t: SystemTime) -> u64 {
 
 #[tauri::command]
 pub fn list_vmcs(opl_root: String) -> Vec<VmcInfo> {
-  let dir = PathBuf::from(&opl_root).join("VMC");
-  let mut res = Vec::new();
-  if let Ok(rd) = fs::read_dir(dir) {
-    for e in rd.flatten() {
-      let p = e.path();
-      if p.is_file() {
-        let meta = match fs::metadata(&p) { Ok(m) => m, Err(_) => continue };
-        let file_name = p.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-        let path = p.to_string_lossy().to_string();
-        let size = meta.len();
-        let modified = meta.modified().ok().map(to_epoch).unwrap_or(0);
-        res.push(VmcInfo { file_name, path, size, modified });
+  let directory = PathBuf::from(&opl_root).join("VMC");
+  let mut result = Vec::new();
+  if let Ok(read_directory) = fs::read_dir(directory) {
+    for entry in read_directory.flatten() {
+      let path = entry.path();
+      if path.is_file() {
+        let metadata = match fs::metadata(&path) { Ok(m) => m, Err(_) => continue };
+        let file_name = path.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        let path_string = path.to_string_lossy().to_string();
+        let size = metadata.len();
+        let modified = metadata.modified().ok().map(to_epoch).unwrap_or(0);
+        result.push(VmcInfo { file_name, path: path_string, size, modified });
       }
     }
   }
-  res
+  result
 }
 
 #[tauri::command]
-pub fn import_vmc(opl_root: String, src_path: String) -> Result<String, String> {
-  let src = PathBuf::from(&src_path);
-  if !src.is_file() { return Err("invalid source".into()); }
-  let dest_dir = PathBuf::from(&opl_root).join("VMC");
-  fs::create_dir_all(&dest_dir).map_err(|e| e.to_string())?;
-  let base = src.file_name().ok_or_else(|| "bad name".to_string())?.to_string_lossy().to_string();
-  let mut candidate = dest_dir.join(&base);
+pub fn import_vmc(opl_root: String, source_path: String) -> Result<String, String> {
+  let source = PathBuf::from(&source_path);
+  if !source.is_file() { return Err("invalid source".into()); }
+  let destination_directory = PathBuf::from(&opl_root).join("VMC");
+  fs::create_dir_all(&destination_directory).map_err(|error| error.to_string())?;
+  let base_filename = source.file_name().ok_or_else(|| "bad name".to_string())?.to_string_lossy().to_string();
+  let mut candidate = destination_directory.join(&base_filename);
   if candidate.exists() {
-    let stem = src.file_stem().and_then(|s| s.to_str()).unwrap_or("vmc").to_string();
-    let ext = src.extension().and_then(|s| s.to_str()).unwrap_or("");
-    let mut i = 1u32;
+    let file_stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("vmc").to_string();
+    let extension = source.extension().and_then(|s| s.to_str()).unwrap_or("");
+    let mut counter = 1u32;
     loop {
-      let name = if ext.is_empty() { format!("{} ({})", stem, i) } else { format!("{} ({}).{}", stem, i, ext) };
-      candidate = dest_dir.join(name);
+      let name = if extension.is_empty() { format!("{} ({})", file_stem, counter) } else { format!("{} ({}).{}", file_stem, counter, extension) };
+      candidate = destination_directory.join(&name);
       if !candidate.exists() { break; }
-      i += 1;
+      counter += 1;
     }
   }
-  fs::copy(&src, &candidate).map_err(|e| e.to_string())?;
+  fs::copy(&source, &candidate).map_err(|error| error.to_string())?;
   Ok(candidate.to_string_lossy().to_string())
 }
 
 #[tauri::command]
-pub fn export_vmc(opl_root: String, file_name: String, dest_path: String) -> Result<String, String> {
-  let src = PathBuf::from(&opl_root).join("VMC").join(&file_name);
-  if !src.is_file() { return Err("source not found".into()); }
-  let dest = PathBuf::from(&dest_path);
-  if let Some(parent) = dest.parent() { fs::create_dir_all(parent).map_err(|e| e.to_string())?; }
-  fs::copy(&src, &dest).map_err(|e| e.to_string())?;
-  Ok(dest.to_string_lossy().to_string())
+pub fn export_vmc(opl_root: String, file_name: String, destination_path: String) -> Result<String, String> {
+  let source = PathBuf::from(&opl_root).join("VMC").join(&file_name);
+  if !source.is_file() { return Err("source not found".into()); }
+  let destination = PathBuf::from(&destination_path);
+  if let Some(parent) = destination.parent() { fs::create_dir_all(parent).map_err(|error| error.to_string())?; }
+  fs::copy(&source, &destination).map_err(|error| error.to_string())?;
+  Ok(destination.to_string_lossy().to_string())
 }
 
 #[tauri::command]

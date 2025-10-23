@@ -1,7 +1,8 @@
 import type { ValidationReport } from '../types'
-import { OplRoots } from '../components/OplRoots'
-import { ValidationPanel } from '../components/ValidationPanel'
-import { VmcPanel } from '../components/VmcPanel'
+import { OplRoots } from '../components/features/OplRoots'
+import { ValidationPanel } from '../components/features/ValidationPanel'
+import { VmcPanel } from '../components/features/vmc/VmcPanel'
+import { PageLayout } from '../components/layout/PageLayout'
 
 type Props = {
   roots: string[]
@@ -15,8 +16,7 @@ type Props = {
 }
 
 export const DiskView = ({ roots, scanning, selectedRoot, onValidate, onFix, onScan, onSelect, report }: Props) => (
-  <div className="section">
-    <h2>OPL Disks</h2>
+  <PageLayout title="OPL Disks">
     {roots.length > 0 && (
       <OplRoots
         roots={roots}
@@ -30,10 +30,10 @@ export const DiskView = ({ roots, scanning, selectedRoot, onValidate, onFix, onS
     )}
 
     {report && (
-      <div className="section">
+      <>
         <ValidationPanel report={report} oplRoot={selectedRoot} />
         <VmcPanel oplRoot={selectedRoot} />
-      </div>
+      </>
     )}
-  </div>
+  </PageLayout>
 )

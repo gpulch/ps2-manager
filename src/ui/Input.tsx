@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes } from 'react'
+import { joinClasses } from '../utils'
 
 export type InputSize = 'sm' | 'md' | 'lg'
 export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
@@ -7,5 +8,5 @@ export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
 }
 
 export const Input = ({ uiSize = 'md', className = '', ...rest }: InputProps) => (
-  <input {...rest} className={[`input`, `input--${uiSize}`, className].join(' ').trim()} />
+  <input {...rest} className={joinClasses('input', `input--${uiSize}`, className)} />
 )

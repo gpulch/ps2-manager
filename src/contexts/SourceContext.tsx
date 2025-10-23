@@ -1,9 +1,15 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { invoke } from '@tauri-apps/api/core'
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import type { ReactNode } from 'react'
-import { load as loadStore } from '@tauri-apps/plugin-store'
 import { open } from '@tauri-apps/plugin-dialog'
 import { useToast } from '../ui/Toast'
+import { getStoredValue, setStoredValue } from '../utils/storage'
+import {
+  validateLibraryFolder,
+  validateGenericFolder,
+  checkWriteableFolder,
+  formatValidationWarnings,
+} from '../utils/validation'
 
 export type SourceMode = 'disk' | 'library'
 
@@ -38,97 +44,123 @@ export const SourceProvider = ({ children }: { children: ReactNode }) => {
   const [storeReady, setStoreReady] = useState(false)
   const toast = useToast()
 
-  const currentRoot = (): string | null => (activeSource === 'disk' ? selectedRoot : libraryRoot)
-  const currentCheatRoot = (): string | null => (cheatsRoot ?? currentRoot())
+  const currentRoot = useCallback(
+    (): string | null => activeSource === 'disk' ? selectedRoot : libraryRoot,
+    [activeSource, selectedRoot, libraryRoot]
+  )
 
-  const setSource = async (mode: SourceMode): Promise<void> => {
+  const currentCheatRoot = useCallback(
+    (): string | null => cheatsRoot ?? currentRoot(),
+    [cheatsRoot, currentRoot]
+  )
+
+  const setSource = useCallback(async (mode: SourceMode): Promise<void> => {
     setActiveSource(mode)
-    const store = await loadStore('settings.json', { autoSave: true, defaults: {} })
-    await store.set('activeSource', mode)
-  }
+    await setStoredValue('activeSource', mode)
+  }, [])
 
-  const chooseLibraryRoot = async (): Promise<void> => {
+  const chooseLibraryRoot = useCallback(async (): Promise<void> => {
     const folder = await open({ directory: true, multiple: false })
     if (!folder || Array.isArray(folder)) return
-    // Validate folder safety and content before accepting
+
     try {
-      const res = await invoke<{ ok: boolean; iso_count: number; warnings: string[] }>('validate_library_folder', { folder })
-      if (!res || !res.ok) {
-        const msg = res && res.warnings && res.warnings.length > 0 ? res.warnings.join('\n') : 'Selected folder is not suitable (no ISO found or too large).'
-        toast.show(msg, 'warning')
+      const result = await validateLibraryFolder(folder)
+      
+      if (!result?.ok) {
+        const message = formatValidationWarnings(result?.warnings)
+        toast.show(message, 'warning')
         return
       }
-      // Optional: warn if not writeable (we still accept selection, some features may be limited)
+
       try {
-        const writable = await invoke<boolean>('check_writeable_folder', { folder })
-        if (!writable) toast.show('Library folder is not writeable; some features may be limited.', 'warning')
-      } catch {}
-    } catch (e) {
-      console.warn('Validation failed', e)
-      toast.show('Library validation failed', 'danger')
-      return
-    }
-    setLibraryRoot(folder)
-    const store = await loadStore('settings.json', { autoSave: true, defaults: {} })
-    await store.set('libraryRoot', folder)
-    toast.show('Library folder selected', 'success')
-  }
+        const isWriteable = await checkWriteableFolder(folder)
+        if (!isWriteable) {
+          toast.show('Library folder is not writeable; some features may be limited.', 'warning')
+        }
+      } catch (error) {
+        console.warn('Failed to check folder writeability:', error)
+      }
 
-  const chooseCheatsRoot = async (): Promise<void> => {
+      setLibraryRoot(folder)
+      await setStoredValue('libraryRoot', folder)
+      
+      // Show info message if folder is empty or has no ISOs
+      if (result.warnings && result.warnings.length > 0) {
+        const hasEmptyWarning = result.warnings.some(w => 
+          w.includes('empty') || w.includes('No .iso files')
+        )
+        if (hasEmptyWarning) {
+          toast.show('Library folder selected - ready for downloads!', 'success')
+        } else {
+          toast.show('Library folder selected', 'success')
+        }
+      } else {
+        toast.show('Library folder selected', 'success')
+      }
+    } catch (error) {
+      console.warn('Validation failed', error)
+      toast.show('Library validation failed', 'danger')
+    }
+  }, [toast])
+
+  const chooseCheatsRoot = useCallback(async (): Promise<void> => {
     const folder = await open({ directory: true, multiple: false })
     if (!folder || Array.isArray(folder)) return
-    // Validate generic folder to avoid roots/huge selections
+
     try {
-      const res = await invoke<{ ok: boolean; warnings: string[] }>('validate_generic_folder', { folder })
-      if (!res || !res.ok) {
-        const msg = res && res.warnings && res.warnings.length > 0 ? res.warnings.join('\n') : 'Selected folder seems too large or not suitable.'
-        toast.show(msg, 'warning')
+      const result = await validateGenericFolder(folder)
+      
+      if (!result?.ok) {
+        const message = formatValidationWarnings(result?.warnings)
+        toast.show(message, 'warning')
         return
       }
-      // Check writeability (create/delete a temp file)
-      const writable = await invoke<boolean>('check_writeable_folder', { folder })
-      if (!writable) {
+
+      const isWriteable = await checkWriteableFolder(folder)
+      if (!isWriteable) {
         toast.show('Selected folder is not writeable. Please choose another folder.', 'danger')
         return
       }
-    } catch (e) {
-      console.warn('Validation failed', e)
-      toast.show('Cheats folder validation failed', 'danger')
-      return
-    }
-    setCheatsRoot(folder)
-    const store = await loadStore('settings.json', { autoSave: true, defaults: {} })
-    await store.set('cheatsRoot', folder)
-    toast.show('Cheats folder selected', 'success')
-  }
 
-  const useLibraryForCheats = async (): Promise<void> => {
+      setCheatsRoot(folder)
+      await setStoredValue('cheatsRoot', folder)
+      toast.show('Cheats folder selected', 'success')
+    } catch (error) {
+      console.warn('Validation failed', error)
+      toast.show('Cheats folder validation failed', 'danger')
+    }
+  }, [toast])
+
+  const useLibraryForCheats = useCallback(async (): Promise<void> => {
     if (!libraryRoot) return
     setCheatsRoot(libraryRoot)
-    const store = await loadStore('settings.json', { autoSave: true, defaults: {} })
-    await store.set('cheatsRoot', libraryRoot)
-  }
+    await setStoredValue('cheatsRoot', libraryRoot)
+  }, [libraryRoot])
 
   useEffect(() => {
-    (async () => {
+    const loadStoredSettings = async (): Promise<void> => {
       try {
-        const store = await loadStore('settings.json', { autoSave: true, defaults: {} })
-        const src = await store.get<string>('activeSource')
-        const last = await store.get<string>('lastRoot')
-        const lib = await store.get<string>('libraryRoot')
-        const cht = await store.get<string>('cheatsRoot')
-        if (src === 'library') setActiveSource('library')
-        if (last) setSelectedRoot(last)
-        if (lib) setLibraryRoot(lib)
-        if (cht) setCheatsRoot(cht)
+        const [source, lastRoot, libRoot, cheatRoot] = await Promise.all([
+          getStoredValue<string>('activeSource'),
+          getStoredValue<string>('lastRoot'),
+          getStoredValue<string>('libraryRoot'),
+          getStoredValue<string>('cheatsRoot'),
+        ])
+
+        if (source === 'library') setActiveSource('library')
+        if (lastRoot) setSelectedRoot(lastRoot)
+        if (libRoot) setLibraryRoot(libRoot)
+        if (cheatRoot) setCheatsRoot(cheatRoot)
       } finally {
         setStoreReady(true)
       }
-    })()
+    }
+
+    loadStoredSettings()
   }, [])
 
-  return (
-    <Ctx.Provider value={{
+  const value = useMemo(
+    () => ({
       activeSource,
       selectedRoot,
       libraryRoot,
@@ -141,8 +173,21 @@ export const SourceProvider = ({ children }: { children: ReactNode }) => {
       currentRoot,
       currentCheatRoot,
       storeReady,
-    }}>
-      {children}
-    </Ctx.Provider>
+    }),
+    [
+      activeSource,
+      selectedRoot,
+      libraryRoot,
+      cheatsRoot,
+      storeReady,
+      setSource,
+      chooseLibraryRoot,
+      chooseCheatsRoot,
+      useLibraryForCheats,
+      currentRoot,
+      currentCheatRoot,
+    ]
   )
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

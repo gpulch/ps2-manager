@@ -1,30 +1,36 @@
 import { useEffect, useState } from 'react'
-import { load as loadStore } from '@tauri-apps/plugin-store'
-
-const setVar = (k: string, v: string) => document.documentElement.style.setProperty(k, v)
+import { applyThemeVariables, DEFAULT_THEME } from '../utils/theme'
+import { getStoredValue, setStoredValue } from '../utils/storage'
 
 export const useTheme = () => {
-  const [fontSize, setFontSize] = useState('16px')
-  const [accent, setAccent] = useState('#4cc2ff')
+  const [fontSize, setFontSize] = useState(DEFAULT_THEME.fontSize)
+  const [accent, setAccent] = useState(DEFAULT_THEME.accent)
 
   useEffect(() => {
-    (async () => {
-      const store = await loadStore('settings.json', { autoSave: true, defaults: {} })
-      const fs = (await store.get<string>('theme:fontSize')) || '16px'
-      const ac = (await store.get<string>('theme:accent')) || '#4cc2ff'
-      setFontSize(fs)
-      setAccent(ac)
-      setVar('--ui-font-size', fs)
-      setVar('--ui-accent', ac)
-    })()
+    const loadTheme = async (): Promise<void> => {
+      const [savedFontSize, savedAccent] = await Promise.all([
+        getStoredValue<string>('theme:fontSize'),
+        getStoredValue<string>('theme:accent'),
+      ])
+
+      const fontSize = savedFontSize || DEFAULT_THEME.fontSize
+      const accent = savedAccent || DEFAULT_THEME.accent
+      
+      setFontSize(fontSize)
+      setAccent(accent)
+      applyThemeVariables({ fontSize, accent })
+    }
+    
+    loadTheme()
   }, [])
 
-  const apply = async () => {
-    const store = await loadStore('settings.json', { autoSave: true, defaults: {} })
-    await store.set('theme:fontSize', fontSize)
-    await store.set('theme:accent', accent)
-    setVar('--ui-font-size', fontSize)
-    setVar('--ui-accent', accent)
+  const apply = async (): Promise<void> => {
+    const theme = { fontSize, accent }
+    await Promise.all([
+      setStoredValue('theme:fontSize', fontSize),
+      setStoredValue('theme:accent', accent),
+    ])
+    applyThemeVariables(theme)
   }
 
   return { fontSize, setFontSize, accent, setAccent, apply }

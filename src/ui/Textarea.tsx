@@ -1,4 +1,5 @@
 import type { TextareaHTMLAttributes } from 'react'
+import { joinClasses } from '../utils'
 
 export type TextareaSize = 'sm' | 'md' | 'lg'
 export type TextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> & {
@@ -7,5 +8,5 @@ export type TextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 's
 }
 
 export const Textarea = ({ uiSize = 'md', className = '', ...rest }: TextareaProps) => (
-  <textarea {...rest} className={[`textarea`, `input--${uiSize}`, className].join(' ').trim()} />
+  <textarea {...rest} className={joinClasses('textarea', `input--${uiSize}`, className)} />
 )
