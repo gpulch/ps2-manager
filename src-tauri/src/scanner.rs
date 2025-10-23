@@ -5,6 +5,12 @@ use std::path::{Path, PathBuf};
 use regex::Regex;
 use crate::iso;
 
+// Limits to protect from scanning huge folders accidentally
+const LIB_SCAN_MAX_DEPTH: u32 = 6;
+const LIB_SCAN_MAX_VISITED: u64 = 50_000;
+const VALIDATE_MAX_DEPTH: u32 = 4;
+const VALIDATE_MAX_VISITED: u64 = 20_000;
+
 #[derive(Serialize)]
 pub struct GameInfo {
   pub path: String,
@@ -16,6 +22,20 @@ pub struct GameInfo {
   pub warnings: Vec<String>,
   pub has_cover: bool,
   pub cover_path: Option<String>,
+}
+
+#[tauri::command]
+pub fn check_writeable_folder(folder: String) -> Result<bool, String> {
+  let root = PathBuf::from(&folder);
+  if !root.is_dir() { return Ok(false); }
+  let test = root.join(".ps2_manager_write_test");
+  match fs::write(&test, b"ok") {
+    Ok(_) => {
+      let _ = fs::remove_file(&test);
+      Ok(true)
+    }
+    Err(e) => Err(e.to_string()),
+  }
 }
 
 fn extract_id_from_filename(name: &str) -> Option<String> {
@@ -99,6 +119,7 @@ fn scan_dir(root: &Path, dir: &Path, kind: &str, out: &mut Vec<GameInfo>) {
   if let Ok(entries) = fs::read_dir(dir) {
     for e in entries.flatten() {
       let p = e.path();
+      if fs::symlink_metadata(&p).map(|m| m.file_type().is_symlink()).unwrap_or(false) { continue; }
       if p.is_file() {
         if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
           if ext.eq_ignore_ascii_case("iso") {
@@ -125,6 +146,7 @@ fn scan_folder_recursive(root: &Path, dir: &Path, out: &mut Vec<GameInfo>) {
   if let Ok(entries) = fs::read_dir(dir) {
     for e in entries.flatten() {
       let p = e.path();
+      if fs::symlink_metadata(&p).map(|m| m.file_type().is_symlink()).unwrap_or(false) { continue; }
       if p.is_dir() {
         scan_folder_recursive(root, &p, out);
       } else if p.is_file() {
@@ -140,6 +162,150 @@ fn scan_folder_recursive(root: &Path, dir: &Path, out: &mut Vec<GameInfo>) {
 pub fn scan_folder_games(folder: String) -> Vec<GameInfo> {
   let root = PathBuf::from(&folder);
   let mut games: Vec<GameInfo> = Vec::new();
-  if root.is_dir() { scan_folder_recursive(&root, &root, &mut games); }
+  if root.is_dir() {
+    let mut visited: u64 = 0;
+    scan_folder_recursive_limited(&root, &root, 0, LIB_SCAN_MAX_DEPTH, &mut visited, LIB_SCAN_MAX_VISITED, &mut games);
+  }
   games
+}
+
+fn scan_folder_recursive_limited(root: &Path, dir: &Path, depth: u32, max_depth: u32, visited: &mut u64, max_visited: u64, out: &mut Vec<GameInfo>) {
+  if *visited >= max_visited || depth > max_depth { return; }
+  if let Ok(entries) = fs::read_dir(dir) {
+    for e in entries.flatten() {
+      if *visited >= max_visited { return; }
+      *visited += 1;
+      let p = e.path();
+      if fs::symlink_metadata(&p).map(|m| m.file_type().is_symlink()).unwrap_or(false) { continue; }
+      if p.is_dir() {
+        scan_folder_recursive_limited(root, &p, depth + 1, max_depth, visited, max_visited, out);
+      } else if p.is_file() {
+        if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
+          if ext.eq_ignore_ascii_case("iso") { out.push(scan_iso_any(root, &p)); }
+        }
+      }
+    }
+  }
+}
+
+#[derive(Serialize)]
+pub struct LibraryValidation {
+  pub iso_count: u32,
+  pub dir_count: u32,
+  pub file_count: u32,
+  pub warnings: Vec<String>,
+  pub ok: bool,
+}
+
+#[tauri::command]
+pub fn validate_library_folder(folder: String) -> LibraryValidation {
+  let root = PathBuf::from(&folder);
+  let mut iso_count: u32 = 0;
+  let mut file_count: u32 = 0;
+  let mut dir_count: u32 = 0;
+  let mut warnings: Vec<String> = Vec::new();
+  let mut ok = true;
+
+  if !root.is_dir() {
+    return LibraryValidation { iso_count: 0, dir_count: 0, file_count: 0, warnings: vec!["not a directory".into()], ok: false };
+  }
+
+  // Heuristics to avoid scanning entire system roots
+  if root.parent().is_none() {
+    warnings.push("Selected a filesystem root; this may be too large".into());
+  }
+
+  let max_depth: u32 = VALIDATE_MAX_DEPTH; // shallower than the scan to be quick
+  let max_visited: u64 = VALIDATE_MAX_VISITED;
+  let mut visited: u64 = 0;
+
+  fn visit(dir: &Path, depth: u32, max_depth: u32, visited: &mut u64, max_visited: u64, iso_count: &mut u32, file_count: &mut u32, dir_count: &mut u32) {
+    if *visited >= max_visited || depth > max_depth { return; }
+    if let Ok(entries) = fs::read_dir(dir) {
+      for e in entries.flatten() {
+        if *visited >= max_visited { return; }
+        *visited += 1;
+        let p = e.path();
+        if fs::symlink_metadata(&p).map(|m| m.file_type().is_symlink()).unwrap_or(false) { continue; }
+        if p.is_dir() {
+          *dir_count += 1;
+          visit(&p, depth + 1, max_depth, visited, max_visited, iso_count, file_count, dir_count);
+        } else if p.is_file() {
+          *file_count += 1;
+          if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
+            if ext.eq_ignore_ascii_case("iso") { *iso_count += 1; }
+          }
+        }
+      }
+    }
+  }
+
+  visit(&root, 0, max_depth, &mut visited, max_visited, &mut iso_count, &mut file_count, &mut dir_count);
+
+  if iso_count == 0 {
+    warnings.push("No .iso files found in the selected folder".into());
+    ok = false;
+  }
+  if visited >= max_visited {
+    warnings.push("Folder seems very large; scanning was limited".into());
+  }
+
+  LibraryValidation { iso_count, dir_count, file_count, warnings, ok }
+}
+
+#[derive(Serialize)]
+pub struct FolderValidation {
+  pub dir_count: u32,
+  pub file_count: u32,
+  pub warnings: Vec<String>,
+  pub ok: bool,
+}
+
+#[tauri::command]
+pub fn validate_generic_folder(folder: String) -> FolderValidation {
+  let root = PathBuf::from(&folder);
+  let mut file_count: u32 = 0;
+  let mut dir_count: u32 = 0;
+  let mut warnings: Vec<String> = Vec::new();
+  let mut ok = true;
+
+  if !root.is_dir() {
+    return FolderValidation { dir_count: 0, file_count: 0, warnings: vec!["not a directory".into()], ok: false };
+  }
+
+  if root.parent().is_none() {
+    warnings.push("Selected a filesystem root; this may be too large".into());
+    ok = false;
+  }
+
+  let max_depth: u32 = 4;
+  let max_visited: u64 = 20_000;
+  let mut visited: u64 = 0;
+
+  fn visit(dir: &Path, depth: u32, max_depth: u32, visited: &mut u64, max_visited: u64, file_count: &mut u32, dir_count: &mut u32) {
+    if *visited >= max_visited || depth > max_depth { return; }
+    if let Ok(entries) = fs::read_dir(dir) {
+      for e in entries.flatten() {
+        if *visited >= max_visited { return; }
+        *visited += 1;
+        let p = e.path();
+        if fs::symlink_metadata(&p).map(|m| m.file_type().is_symlink()).unwrap_or(false) { continue; }
+        if p.is_dir() {
+          *dir_count += 1;
+          visit(&p, depth + 1, max_depth, visited, max_visited, file_count, dir_count);
+        } else if p.is_file() {
+          *file_count += 1;
+        }
+      }
+    }
+  }
+
+  visit(&root, 0, max_depth, &mut visited, max_visited, &mut file_count, &mut dir_count);
+
+  if visited >= max_visited {
+    warnings.push("Folder seems very large; scanning was limited".into());
+    ok = false;
+  }
+
+  FolderValidation { dir_count, file_count, warnings, ok }
 }

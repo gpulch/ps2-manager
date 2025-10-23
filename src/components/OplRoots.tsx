@@ -1,3 +1,4 @@
+import { Button } from '../ui/Button'
 type Props = {
   roots: string[]
   scanning: boolean
@@ -9,17 +10,17 @@ type Props = {
 }
 
 export const OplRoots = ({ roots, scanning, selectedRoot, onValidate, onFix, onScan, onSelect }: Props) => (
-  <div style={{ marginTop: 16 }}>
+  <div className="section">
     <h2>Detected OPL roots</h2>
     <ul>
       {roots.map((r) => (
-        <li key={r} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <code style={{ fontSize: 12 }}>{r}</code>
-          <button onClick={() => onValidate(r)}>Validate</button>
-          <button onClick={() => onFix(r)}>Fix missing dirs</button>
-          <button onClick={() => { onSelect(r); onScan(r) }} disabled={scanning}>
+        <li key={r} className="row">
+          <code className="code-mini">{r}</code>
+          <Button onClick={() => onValidate(r)}>Validate</Button>
+          <Button onClick={() => onFix(r)}>Fix missing dirs</Button>
+          <Button onClick={() => { onSelect(r); onScan(r) }} disabled={scanning}>
             {scanning && selectedRoot === r ? 'Scanning...' : 'Scan games'}
-          </button>
+          </Button>
         </li>
       ))}
     </ul>

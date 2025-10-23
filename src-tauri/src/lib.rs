@@ -13,6 +13,7 @@ mod exporter;
 pub fn run() {
   tauri::Builder::default()
     .setup(|app| {
+      let _ = dotenvy::dotenv();
       if cfg!(debug_assertions) {
         app.handle().plugin(
           tauri_plugin_log::Builder::default()
@@ -30,6 +31,9 @@ pub fn run() {
       opl::fix_opl_structure,
       scanner::scan_opl_games,
       scanner::scan_folder_games,
+      scanner::validate_library_folder,
+      scanner::validate_generic_folder,
+      scanner::check_writeable_folder,
       naming::preview_renames,
       naming::apply_renames,
       covers::save_cover_from_url,

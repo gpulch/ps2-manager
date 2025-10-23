@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files (keep examples only)
+.env
+.env.*
+!*.example
+src-tauri/.env
+src-tauri/.env.*
+!src-tauri/.env.example

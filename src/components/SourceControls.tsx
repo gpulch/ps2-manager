@@ -1,3 +1,4 @@
+import { Button } from '../ui/Button'
 type Props = {
   activeSource: 'disk' | 'library'
   libraryRoot: string | null
@@ -21,20 +22,20 @@ export const SourceControls = ({
   scanning,
   scanLibrary,
 }: Props) => (
-  <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+  <div className="row section">
     <strong>Source</strong>
-    <button onClick={() => setSource('disk')} disabled={activeSource === 'disk'}>Disk</button>
-    <button onClick={() => setSource('library')} disabled={activeSource === 'library'}>Library</button>
+    <Button onClick={() => setSource('disk')} disabled={activeSource === 'disk'}>Disk</Button>
+    <Button onClick={() => setSource('library')} disabled={activeSource === 'library'}>Library</Button>
     {activeSource === 'library' && (
       <>
-        <button onClick={chooseLibraryRoot}>Choose library folder</button>
-        <button onClick={chooseCheatsRoot}>Choose cheats folder</button>
-        <button onClick={useLibraryForCheats}>Use library for cheats</button>
+        <Button onClick={chooseLibraryRoot}>Choose library folder</Button>
+        <Button onClick={chooseCheatsRoot}>Choose cheats folder</Button>
+        <Button onClick={useLibraryForCheats}>Use library for cheats</Button>
         <span>Library: <code style={{ fontSize: 12 }}>{libraryRoot ?? '-'}</code></span>
         <span>Cheats: <code style={{ fontSize: 12 }}>{(cheatsRoot ?? libraryRoot) ?? '-'}</code></span>
-        <button onClick={() => libraryRoot && scanLibrary(libraryRoot)} disabled={scanning || !libraryRoot}>
+        <Button onClick={() => libraryRoot && scanLibrary(libraryRoot)} disabled={scanning || !libraryRoot}>
           {scanning ? 'Scanning...' : 'Scan library'}
-        </button>
+        </Button>
       </>
     )}
   </div>

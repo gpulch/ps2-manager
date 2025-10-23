@@ -1,6 +1,9 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { invoke } from '@tauri-apps/api/core'
+import type { ReactNode } from 'react'
 import { load as loadStore } from '@tauri-apps/plugin-store'
 import { open } from '@tauri-apps/plugin-dialog'
+import { useToast } from '../ui/Toast'
 
 export type SourceMode = 'disk' | 'library'
 
@@ -33,6 +36,7 @@ export const SourceProvider = ({ children }: { children: ReactNode }) => {
   const [libraryRoot, setLibraryRoot] = useState<string | null>(null)
   const [cheatsRoot, setCheatsRoot] = useState<string | null>(null)
   const [storeReady, setStoreReady] = useState(false)
+  const toast = useToast()
 
   const currentRoot = (): string | null => (activeSource === 'disk' ? selectedRoot : libraryRoot)
   const currentCheatRoot = (): string | null => (cheatsRoot ?? currentRoot())
@@ -46,17 +50,56 @@ export const SourceProvider = ({ children }: { children: ReactNode }) => {
   const chooseLibraryRoot = async (): Promise<void> => {
     const folder = await open({ directory: true, multiple: false })
     if (!folder || Array.isArray(folder)) return
+    // Validate folder safety and content before accepting
+    try {
+      const res = await invoke<{ ok: boolean; iso_count: number; warnings: string[] }>('validate_library_folder', { folder })
+      if (!res || !res.ok) {
+        const msg = res && res.warnings && res.warnings.length > 0 ? res.warnings.join('\n') : 'Selected folder is not suitable (no ISO found or too large).'
+        toast.show(msg, 'warning')
+        return
+      }
+      // Optional: warn if not writeable (we still accept selection, some features may be limited)
+      try {
+        const writable = await invoke<boolean>('check_writeable_folder', { folder })
+        if (!writable) toast.show('Library folder is not writeable; some features may be limited.', 'warning')
+      } catch {}
+    } catch (e) {
+      console.warn('Validation failed', e)
+      toast.show('Library validation failed', 'danger')
+      return
+    }
     setLibraryRoot(folder)
     const store = await loadStore('settings.json', { autoSave: true, defaults: {} })
     await store.set('libraryRoot', folder)
+    toast.show('Library folder selected', 'success')
   }
 
   const chooseCheatsRoot = async (): Promise<void> => {
     const folder = await open({ directory: true, multiple: false })
     if (!folder || Array.isArray(folder)) return
+    // Validate generic folder to avoid roots/huge selections
+    try {
+      const res = await invoke<{ ok: boolean; warnings: string[] }>('validate_generic_folder', { folder })
+      if (!res || !res.ok) {
+        const msg = res && res.warnings && res.warnings.length > 0 ? res.warnings.join('\n') : 'Selected folder seems too large or not suitable.'
+        toast.show(msg, 'warning')
+        return
+      }
+      // Check writeability (create/delete a temp file)
+      const writable = await invoke<boolean>('check_writeable_folder', { folder })
+      if (!writable) {
+        toast.show('Selected folder is not writeable. Please choose another folder.', 'danger')
+        return
+      }
+    } catch (e) {
+      console.warn('Validation failed', e)
+      toast.show('Cheats folder validation failed', 'danger')
+      return
+    }
     setCheatsRoot(folder)
     const store = await loadStore('settings.json', { autoSave: true, defaults: {} })
     await store.set('cheatsRoot', folder)
+    toast.show('Cheats folder selected', 'success')
   }
 
   const useLibraryForCheats = async (): Promise<void> => {

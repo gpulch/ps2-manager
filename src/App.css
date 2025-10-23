@@ -90,8 +90,8 @@ h1, h2, h3 {
   text-shadow: 0 0 10px rgba(76, 194, 255, 0.3);
 }
 
-/* Buttons */
-button {
+/* Buttons (legacy styles for raw buttons only; shared UI uses .btn) */
+button:not(.btn) {
   background: var(--neo-surface);
   color: var(--neo-text);
   border: 2px solid var(--neo-accent);
@@ -103,15 +103,35 @@ button {
   box-shadow: 6px 6px 0 0 rgba(76, 194, 255, 0.25);
   transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
-button:hover {
+button:not(.btn):hover {
   transform: translate(-2px, -2px);
   box-shadow: 10px 10px 0 0 rgba(57, 255, 20, 0.22);
 }
-button:disabled {
+button:not(.btn):disabled {
   opacity: 0.6;
   filter: grayscale(0.2);
   box-shadow: 4px 4px 0 0 rgba(128, 128, 128, 0.2);
   transform: none;
+}
+
+/* Inputs (legacy styles for raw fields; shared UI uses .input/.select/.textarea) */
+input:not(.input), select:not(.select), textarea:not(.textarea) {
+  background: var(--neo-surface);
+  color: var(--neo-text);
+  border: 2px solid var(--neo-border);
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 6px 6px 0 0 rgba(76, 194, 255, 0.15);
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+input:not(.input)::placeholder, textarea:not(.textarea)::placeholder {
+  color: rgba(230, 240, 255, 0.55);
+}
+input:not(.input):focus, select:not(.select):focus, textarea:not(.textarea):focus {
+  outline: none;
+  border-color: var(--neo-accent);
+  transform: translate(-1px, -1px);
+  box-shadow: 8px 8px 0 0 rgba(255, 61, 240, 0.2);
 }
 
 /* Tables */
@@ -152,4 +172,76 @@ code {
   background: linear-gradient(180deg, #0f1116 0%, #0b0d12 100%);
   border-radius: 12px;
   box-shadow: 12px 12px 0 0 rgba(76, 194, 255, 0.25);
+}
+
+/* Layout utils */
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.justify-between { justify-content: space-between; }
+
+.section {
+  margin-top: 16px;
+}
+
+/* Tables */
+table.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th.th-left {
+  text-align: left;
+}
+
+code.code-mini {
+  font-size: 12px;
+}
+
+img.img-cover {
+  max-height: 220px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.toolbar {
+  margin-bottom: 8px;
+}
+
+.gap-24 {
+  gap: 24px;
+}
+
+.fullwidth {
+  width: 100%;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  #root {
+    padding: 1rem;
+  }
+  .card {
+    padding: 1rem;
+    box-shadow: 6px 6px 0 0 rgba(76, 194, 255, 0.2);
+  }
+  .neo-header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  button, input, select, textarea {
+    font-size: 14px;
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+  table.table th, table.table td {
+    padding: 8px;
+  }
 }

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import { loadCheat, saveCheat, importCheat, exportCheat } from '../actions/cheats'
+import { Input } from '../ui/Input'
+import { Button } from '../ui/Button'
 
 type Props = { cheatRoot: string | null }
 
@@ -9,6 +11,7 @@ export const CheatsPanel = ({ cheatRoot }: Props) => {
   const [cheatText, setCheatText] = useState('')
   const [cheatMsg, setCheatMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [openPanel, setOpenPanel] = useState(false)
 
   const onLoad = async () => {
     if (!cheatRoot || !cheatId) return
@@ -37,17 +40,24 @@ export const CheatsPanel = ({ cheatRoot }: Props) => {
   }
 
   return (
-    <div style={{ marginTop: 16 }}>
-      <h3>Cheat manager (.CHT)</h3>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-        <input placeholder="Game ID (e.g. SLUS_203.12)" value={cheatId} onChange={(e) => setCheatId(e.target.value)} />
-        <button onClick={onLoad} disabled={busy}>{busy ? 'Loading...' : 'Load'}</button>
-        <button onClick={onSave} disabled={busy || !cheatId}>{busy ? 'Saving...' : 'Save'}</button>
-        <button onClick={onImport} disabled={busy}>Import (.CHT)</button>
-        <button onClick={onExport} disabled={busy || !cheatId}>Export (.CHT)</button>
+    <div className="section">
+      <div className="row justify-between">
+        <h3 style={{ margin: 0 }}>Cheat manager (.CHT)</h3>
+        <Button onClick={() => setOpenPanel(v => !v)}>{openPanel ? 'Hide' : 'Show'}</Button>
       </div>
-      <textarea value={cheatText} onChange={(e) => setCheatText(e.target.value)} rows={10} style={{ width: '100%' }} />
-      {cheatMsg && <div style={{ marginTop: 8 }}><code>{cheatMsg}</code></div>}
+      {openPanel && (
+        <>
+          <div className="row toolbar">
+            <Input placeholder="Game ID (e.g. SLUS_203.12)" value={cheatId} onChange={(e) => setCheatId(e.target.value)} />
+            <Button onClick={onLoad} disabled={busy}>{busy ? 'Loading...' : 'Load'}</Button>
+            <Button onClick={onSave} disabled={busy || !cheatId}>{busy ? 'Saving...' : 'Save'}</Button>
+            <Button onClick={onImport} disabled={busy}>Import (.CHT)</Button>
+            <Button onClick={onExport} disabled={busy || !cheatId}>Export (.CHT)</Button>
+          </div>
+          <textarea className="textarea fullwidth" value={cheatText} onChange={(e) => setCheatText(e.target.value)} rows={10} />
+          {cheatMsg && <div className="section"><code>{cheatMsg}</code></div>}
+        </>
+      )}
     </div>
   )
 }

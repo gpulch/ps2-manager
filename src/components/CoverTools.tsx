@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { open } from '@tauri-apps/plugin-dialog'
 import { saveCoverFromUrl, saveCoverFromFile, autoFetchCover } from '../actions/covers'
+import { Input } from '../ui/Input'
+import { Button } from '../ui/Button'
 
 type Props = {
   root: string | null
@@ -33,16 +35,16 @@ export const CoverTools = ({ root, onSaved }: Props) => {
   }
 
   return (
-    <div style={{ marginTop: 16 }}>
+    <div className="section">
       <h3>Cover tools</h3>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <input placeholder="Game ID (e.g. SLUS_203.12)" value={coverId} onChange={(e) => setCoverId(e.target.value)} />
-        <input placeholder="Image URL" value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} style={{ minWidth: 320 }} />
-        <button onClick={onSaveUrl}>Save cover from URL</button>
-        <button onClick={onSaveFile}>Save cover from file</button>
-        <button onClick={onAutoFetch}>Auto-fetch cover</button>
+      <div className="row toolbar">
+        <Input placeholder="Game ID (e.g. SLUS_203.12)" value={coverId} onChange={(e) => setCoverId(e.target.value)} />
+        <Input className="w-full" placeholder="Image URL" value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} />
+        <Button onClick={onSaveUrl}>Save cover from URL</Button>
+        <Button onClick={onSaveFile}>Save cover from file</Button>
+        <Button onClick={onAutoFetch}>Auto-fetch cover</Button>
       </div>
-      {msg && <div style={{ marginTop: 8 }}><code>{msg}</code></div>}
+      {msg && <div className="section"><code>{msg}</code></div>}
     </div>
   )
 }
