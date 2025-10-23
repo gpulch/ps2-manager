@@ -30,6 +30,7 @@ pnpm run tauri:dev
 - **Organizer (CD/DVD)**: preview and apply moves between `CD/` and `DVD/` based on size threshold (≤800 MiB → `CD/`).
 - **Catalog caching**: stores last scan per root and shows it instantly on launch; one-click rescan.
 - **Export catalog**: export the current catalog to a JSON file.
+- **Library mode (no disk required)**: toggle Disk/Library, choose a local Library folder (recursive ISO scan) and a Cheats folder; manage covers and cheats locally.
 
 ## Roadmap (next)
 - Harden the `SYSTEM.CNF` parser to support larger directories and edge cases.
