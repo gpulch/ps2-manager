@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from 'react'
 import { getStoredValue, setStoredValue } from '../utils/storage'
 
-export type Page = 'dashboard' | 'library' | 'disk' | 'cheats' | 'settings'
+export type Page = 'dashboard' | 'library' | 'downloads' | 'disk' | 'cheats' | 'settings'
 
 export type NavContextValue = {
   page: Page

@@ -105,3 +105,28 @@ pub fn fix_opl_structure(path: String) -> ValidationReport {
   }
   validate_opl_dir(path)
 }
+
+/// Initialize OPL structure in a user-selected folder
+/// Creates all required OPL subdirectories (DVD, CD, ART, CFG, CHT, VMC)
+#[tauri::command]
+pub fn initialize_opl_structure(base_path: String) -> Result<ValidationReport, String> {
+  let root = PathBuf::from(&base_path);
+  
+  // Verify base path exists
+  if !root.exists() {
+    return Err("Selected folder does not exist".into());
+  }
+  
+  if !root.is_dir() {
+    return Err("Selected path is not a directory".into());
+  }
+  
+  // Create OPL structure
+  let dirs = ["DVD", "CD", "ART", "CFG", "CHT", "VMC"];
+  for d in dirs.iter() {
+    let dir_path = root.join(d);
+    fs::create_dir_all(&dir_path).map_err(|e| format!("Failed to create {}: {}", d, e))?;
+  }
+  
+  Ok(validate_opl_dir(base_path))
+}

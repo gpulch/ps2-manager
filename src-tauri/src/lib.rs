@@ -15,6 +15,8 @@ mod duplicates;
 mod backup;
 mod converter;
 mod cdda;
+mod transfer;
+mod game_metadata;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -36,6 +38,7 @@ pub fn run() {
       opl::suggest_opl_roots,
       opl::validate_opl_dir,
       opl::fix_opl_structure,
+      opl::initialize_opl_structure,
       scanner::scan_opl_games,
       scanner::scan_folder_games,
       scanner::validate_library_folder,
@@ -59,6 +62,9 @@ pub fn run() {
       organizer::preview_organize,
       organizer::apply_organize,
       metadata::auto_fetch_cover,
+      metadata::batch_fetch_covers,
+      metadata::get_cover_stats,
+      metadata::verify_cover_file,
       exporter::export_catalog_json,
       remote::fetch_archive_org_games,
       remote::download_remote_iso,
@@ -75,6 +81,11 @@ pub fn run() {
       converter::convert_bin_to_iso,
       converter::get_conversion_info,
       cdda::detect_cdda,
+      transfer::copy_iso_to_opl,
+      transfer::delete_iso_from_opl,
+      transfer::is_iso_present,
+      game_metadata::fetch_game_metadata,
+      game_metadata::batch_fetch_metadata,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

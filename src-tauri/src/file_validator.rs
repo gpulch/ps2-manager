@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 
 /// Validates if a file is complete by checking its size matches expected size
+#[allow(dead_code)]
 pub fn validate_file_size(file_path: &Path, expected_size: u64) -> Result<bool, String> {
   match fs::metadata(file_path) {
     Ok(metadata) => {
@@ -13,6 +14,7 @@ pub fn validate_file_size(file_path: &Path, expected_size: u64) -> Result<bool, 
 }
 
 /// Cleans up incomplete downloads in a directory
+#[allow(dead_code)]
 pub fn cleanup_incomplete_downloads(directory: &Path, extensions: &[&str]) -> Result<Vec<String>, String> {
   let mut cleaned_files = Vec::new();
   

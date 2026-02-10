@@ -1,59 +1,25 @@
-# Frequently Asked Questions
+## FAQ — PS2 Manager
 
-Common questions about PS2 Manager.
+Short answers to common questions.
 
----
+### General
+- **What is PS2 Manager?** Desktop app for PS2 libraries with OPL support.
+- **Is it free?** Yes, open source.
+- **Platforms?** macOS 10.15+, Windows 10+, Linux (Ubuntu 20.04+).
 
-## General
+### Installation
+- **How to install?** Download for your OS, run installer, follow prompts.
+- **Antivirus warning?** Usually false positive; app is open source. Check hash and allow.
 
-**Q: What is PS2 Manager?**  
-A: Desktop app for managing PS2 game libraries with OPL support.
+### Usage
+- **Add games?** Scan → pick folder with ISOs.
+- **Get covers?** “Auto-Fetch Missing” downloads covers.
+- **Download games?** From Archive.org via Remote Sources (see guide).
+- **Queue downloads?** Yes, add multiple; processed sequentially.
 
-**Q: Is it free?**  
-A: Yes, completely free and open source.
+### Troubleshooting
+- **Games not detected?** Ensure `.iso` present and permissions OK.
+- **Covers not downloading?** Check connection; game may be missing in DB.
+- **Downloads fail?** Check connection, disk space, and size limits (<10 GB).
 
-**Q: What platforms?**  
-A: macOS 10.15+, Windows 10+, Linux (Ubuntu 20.04+)
-
----
-
-## Installation
-
-**Q: How to install?**  
-A: Download for your platform, run installer, follow prompts.
-
-**Q: Antivirus warning?**  
-A: False positive. App is safe and open source.
-
----
-
-## Usage
-
-**Q: How to add games?**  
-A: Click Scan → Select folder with ISOs → Done
-
-**Q: How to get covers?**  
-A: Click "Auto-Fetch Missing" to download automatically
-
-**Q: Can I download games?**  
-A: Yes, from Archive.org via Remote Sources
-
-**Q: Download queue?**  
-A: Yes! Add multiple, they process automatically
-
----
-
-## Troubleshooting
-
-**Q: Games not detected?**  
-A: Check folder has .iso files and permissions
-
-**Q: Covers won't download?**  
-A: Check internet, game might not be in database
-
-**Q: Downloads fail?**  
-A: Check connection, file size (<10 GB), try again
-
----
-
-**More help:** See USER_GUIDE.md
+More help: see `USER_GUIDE.md`.

@@ -3,6 +3,7 @@ use std::io::Cursor;
 use std::path::PathBuf;
 
 use image::ImageFormat;
+use serde::Deserialize;
 
 #[tauri::command]
 pub fn save_cover_from_url(opl_root: String, game_id: String, url: String) -> Result<String, String> {
@@ -35,14 +36,33 @@ pub fn save_cover_from_file(opl_root: String, game_id: String, source_path: Stri
   Ok(destination.to_string_lossy().to_string())
 }
 
+#[derive(Deserialize)]
+pub struct DeleteCoverArgs {
+  #[serde(alias = "oplRoot")]
+  pub opl_root: String,
+  #[serde(alias = "gameId")]
+  pub game_id: String,
+}
+
 #[tauri::command]
-pub fn delete_cover(opl_root: String, game_id: String) -> Result<bool, String> {
-  let id = game_id.trim().to_uppercase();
+pub fn delete_cover(args: DeleteCoverArgs) -> Result<bool, String> {
+  println!("🗑️ delete_cover backend called: opl_root={}, game_id={}", args.opl_root, args.game_id);
+  let id = args.game_id.trim().to_uppercase();
   if id.is_empty() { return Err("missing id".into()); }
-  let path = PathBuf::from(&opl_root).join("ART").join(format!("{}.png", id));
+  let path = PathBuf::from(&args.opl_root).join("ART").join(format!("{}.png", id));
+  println!("   → Deleting file: {}", path.display());
   match fs::remove_file(&path) {
-    Ok(_) => Ok(true),
-    Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
-    Err(e) => Err(e.to_string()),
+    Ok(_) => {
+      println!("   ✅ File deleted successfully");
+      Ok(true)
+    },
+    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+      println!("   ⚠️ File not found (already deleted?)");
+      Ok(false)
+    },
+    Err(e) => {
+      println!("   ❌ Error deleting file: {}", e);
+      Err(e.to_string())
+    },
   }
 }
