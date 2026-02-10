@@ -2,6 +2,15 @@
 
 Desktop app (macOS/Windows) to manage PlayStation 2 game catalogs for Open PS2 Loader (OPL): scan ISOs, fetch covers, handle cheats/VMC, and keep folders clean.
 
+###### GAMES VIEW
+![PS2 Manager Screenshot GAMES VIEW](screenshots/PS2_manager_game.png)
+
+###### GAME DETAILS VIEW
+![PS2 Manager Screenshot GAME DETAILS VIEW](screenshots/PS2_manager_description.png)
+
+###### DOWNLOADS VIEW
+![PS2 Manager Screenshot DOWNLOADS VIEW](screenshots/PS2_manager_downloads.png)
+
 ## Key features
 - **OPL integration**: Detect/validate `DVD/`, `CD/`, `ART/`, `CFG/`, `CHT/`, `VMC/` and auto-fix missing folders.
 - **Catalog tools**: Scan ISOs, extract IDs, smart rename (`ID - Title.iso`, 80 chars), export JSON.
