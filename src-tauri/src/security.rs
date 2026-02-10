@@ -78,8 +78,9 @@ pub fn sanitize_filename(name: &str) -> Result<String, String> {
     return Err("Only .iso files are allowed".into());
   }
 
-  // Validate characters (compile regex once)
-  let re = Regex::new(r"^[\w\s\-\.]+\.iso$").unwrap();
+  // Validate characters - allow alphanumeric, spaces, common punctuation
+  // Allows: letters, numbers, spaces, hyphens, underscores, dots, parentheses, ampersands, apostrophes, exclamation marks
+  let re = Regex::new(r"^[\w\s\-\.\(\)\&\'\!\,\+\[\]]+\.iso$").unwrap();
   if !re.is_match(&lower) {
     return Err("Filename contains invalid characters".into());
   }

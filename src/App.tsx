@@ -11,7 +11,6 @@ import { useScanOps } from './hooks/useScanOps'
 import { useRenameOps } from './hooks/useRenameOps'
 import { useExportOps } from './hooks/useExportOps'
 import { getStoredValue } from './utils/storage'
-import { Header } from './components/layout/Header'
 import { NavBar } from './components/layout/NavBar'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { LoadingSpinner } from './components/shared/LoadingSpinner'
@@ -25,6 +24,7 @@ import './App.css'
 // Lazy load heavy components
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })))
 const LibraryView = lazy(() => import('./pages/LibraryView').then(m => ({ default: m.LibraryView })))
+const DownloadsView = lazy(() => import('./pages/DownloadsView').then(m => ({ default: m.DownloadsView })))
 const DiskView = lazy(() => import('./pages/DiskView').then(m => ({ default: m.DiskView })))
 const CheatsPanel = lazy(() => import('./components/features/cheats/CheatsPanel').then(m => ({ default: m.CheatsPanel })))
 const SettingsPanel = lazy(() => import('./components/features/SettingsPanel').then(m => ({ default: m.SettingsPanel })))
@@ -35,7 +35,7 @@ const App = () => {
   const { activeSource, selectedRoot, setSelectedRoot, libraryRoot, cheatsRoot, setSource, chooseLibraryRoot, chooseCheatsRoot, useLibraryForCheats, currentRoot, currentCheatRoot, storeReady } = useSourceContext()
   const { page } = useNav()
 
-  const { games, setGames, previewCover, setPreviewCover } = useCatalogState()
+  const { games, setGames } = useCatalogState()
   const { scanning, scanGames, scanLibrary, scanCurrent } = useScanOps({ setGames, storeReady, currentRoot, activeSource })
   const { renamePreview, renaming, previewRenames, applyRenames } = useRenameOps({ refreshAfterApply: scanGames })
   const { exporting, exportMsg, exportCatalog } = useExportOps({ games })
@@ -44,6 +44,7 @@ const App = () => {
     autoFetchCoverFor,
     autoFetchMissingCovers,
     fetchProgress,
+    fetchingCovers,
   } = useCoverOps({ games, setGames, currentRoot })
 
   // Theme modal
@@ -115,7 +116,6 @@ const App = () => {
     <ErrorBoundary>
       <div style={{ fontFamily: 'system-ui', color: 'var(--neo-text)' }}>
         <AppHeader />
-        <Header />
         <NavBar />
 
         <Modal open={themeOpen} title="Theme settings" onClose={() => setThemeOpen(false)}
@@ -146,6 +146,14 @@ const App = () => {
               onExport={exportCatalog}
               fetchProgress={fetchProgress}
               exportMsg={exportMsg}
+              fetchingCovers={fetchingCovers}
+            />
+          )}
+
+          {page === 'downloads' && (
+            <DownloadsView
+              libraryRoot={libraryRoot}
+              onRescan={scanCurrent}
             />
           )}
 
@@ -170,8 +178,6 @@ const App = () => {
               onExport={exportCatalog}
               onDeleteCover={deleteCover}
               onFetchCover={autoFetchCoverFor}
-              previewCover={previewCover}
-              setPreviewCover={setPreviewCover}
               renamePreview={renamePreview}
               onPreviewRenames={() => selectedRoot && previewRenames(selectedRoot)}
               onApplyRenames={() => selectedRoot && applyRenames(selectedRoot)}

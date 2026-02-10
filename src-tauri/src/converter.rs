@@ -1,5 +1,5 @@
 use std::fs::{self, File};
-use std::io::{BufReader, BufWriter, Read, Write, Seek, SeekFrom};
+use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 
 /// BIN/CUE to ISO converter
@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 const SECTOR_SIZE: usize = 2352; // RAW CD sector size
 const ISO_SECTOR_SIZE: usize = 2048; // ISO data sector size
 const SECTOR_HEADER: usize = 16; // CD-ROM XA header
-const SECTOR_ECC: usize = 288; // Error correction
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ConversionProgress {
     pub converted_bytes: u64,
@@ -175,6 +175,7 @@ pub fn get_conversion_info(cue_path: String) -> Result<serde_json::Value, String
 }
 
 /// Check if file is a CUE file
+#[allow(dead_code)]
 pub fn is_cue_file(path: &Path) -> bool {
     path.extension()
         .and_then(|extension| extension.to_str())
@@ -183,6 +184,7 @@ pub fn is_cue_file(path: &Path) -> bool {
 }
 
 /// Check if file is a BIN file
+#[allow(dead_code)]
 pub fn is_bin_file(path: &Path) -> bool {
     path.extension()
         .and_then(|extension| extension.to_str())

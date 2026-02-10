@@ -1,23 +1,33 @@
-import { useMemo } from 'react'
-import type { GameInfo } from '../types'
-import { Button } from '../ui/Button'
-import { PageLayout } from '../components/layout/PageLayout'
-import { calculateDashboardStats } from '../utils'
+import { useMemo } from 'react';
+import type { GameInfo } from '../types';
+import { Button } from '../ui/Button';
+import { PageLayout } from '../components/layout/PageLayout';
+import { calculateDashboardStats } from '../utils';
 
 type Props = {
-  games: GameInfo[]
-  onRescan: () => void
-  rescanning: boolean
-  onAutoFetchMissing: () => void
-  onExport: () => void
-  fetchProgress: string | null
-  exportMsg: string | null
-}
+  games: GameInfo[];
+  onRescan: () => void;
+  rescanning: boolean;
+  onAutoFetchMissing: () => void;
+  onExport: () => void;
+  fetchProgress: string | null;
+  exportMsg: string | null;
+  fetchingCovers?: boolean;
+};
 
-export const Dashboard = ({ games, onRescan, rescanning, onAutoFetchMissing, onExport, fetchProgress, exportMsg }: Props) => {
+export const Dashboard = ({
+  games,
+  onRescan,
+  rescanning,
+  onAutoFetchMissing,
+  onExport,
+  fetchProgress,
+  exportMsg,
+  fetchingCovers,
+}: Props) => {
   // Memoize stats calculation to avoid recalculation on every render
-  const stats = useMemo(() => calculateDashboardStats(games), [games])
-  const { total, withCover, missingCover, warnings } = stats
+  const stats = useMemo(() => calculateDashboardStats(games), [games]);
+  const { total, withCover, missingCover, warnings } = stats;
 
   return (
     <PageLayout title="Dashboard">
@@ -42,13 +52,27 @@ export const Dashboard = ({ games, onRescan, rescanning, onAutoFetchMissing, onE
 
       <div className="section">
         <div className="row toolbar">
-          <Button onClick={onRescan} disabled={rescanning}>{rescanning ? 'Rescanning...' : 'Rescan current source'}</Button>
-          <Button onClick={onAutoFetchMissing}>Auto-fetch missing covers</Button>
+          <Button onClick={onRescan} disabled={rescanning}>
+            {rescanning ? 'Rescanning...' : 'Rescan current source'}
+          </Button>
+          <Button onClick={onAutoFetchMissing} disabled={fetchingCovers}>
+            {fetchingCovers
+              ? 'Fetching covers...'
+              : 'Auto-fetch missing covers'}
+          </Button>
           <Button onClick={onExport}>Export catalog JSON</Button>
         </div>
-        {fetchProgress && <div style={{ marginTop: '8px' }}><code>{fetchProgress}</code></div>}
-        {exportMsg && <div style={{ marginTop: '8px' }}><code>{exportMsg}</code></div>}
+        {fetchProgress && (
+          <div style={{ marginTop: '8px' }}>
+            <code>{fetchProgress}</code>
+          </div>
+        )}
+        {exportMsg && (
+          <div style={{ marginTop: '8px' }}>
+            <code>{exportMsg}</code>
+          </div>
+        )}
       </div>
     </PageLayout>
-  )
-}
+  );
+};

@@ -12,6 +12,8 @@ export type RemoteGame = {
 }
 
 export type DownloadProgress = {
+  file_name: string
+  download_url: string
   downloaded: number
   total: number
   percent: number

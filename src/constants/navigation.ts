@@ -8,6 +8,7 @@ export type NavigationTab = {
 export const NAVIGATION_TABS: ReadonlyArray<NavigationTab> = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'library', label: 'Library' },
+  { key: 'downloads', label: 'Downloads' },
   { key: 'disk', label: 'Disk' },
   { key: 'cheats', label: 'Cheats' },
   { key: 'settings', label: 'Settings' },

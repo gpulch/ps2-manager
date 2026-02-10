@@ -1,8 +1,10 @@
+import { useMemo, useState } from 'react'
 import type { GameInfo, RenameProposal } from '../types'
-import { SourceControls } from '../components/features/SourceControls'
-import { GamesSection } from '../components/shared/GamesSection'
-import { RemoteSourcesPanel } from '../components/features/remote/RemoteSourcesPanel'
+import { GamesTable } from '../components/shared/GamesTable'
 import { PageLayout } from '../components/layout/PageLayout'
+import { Input } from '../ui/Input'
+import { Select } from '../ui/Select'
+import { useSourceContext } from '../contexts/SourceContext'
 
 type Props = {
   activeSource: 'disk' | 'library'
@@ -24,8 +26,6 @@ type Props = {
   onExport: () => void
   onDeleteCover: (id?: string) => void
   onFetchCover: (id?: string, title?: string) => void
-  previewCover: string | null
-  setPreviewCover: (url: string | null) => void
   renamePreview: RenameProposal[] | null
   onPreviewRenames: () => void
   onApplyRenames: () => void
@@ -34,46 +34,86 @@ type Props = {
   onCoverSaved: (id: string, path: string) => void
 }
 
-export const LibraryView = (props: Props) => (
-  <PageLayout title="Library">
-    <SourceControls
-      activeSource={props.activeSource}
-      libraryRoot={props.libraryRoot}
-      cheatsRoot={props.cheatsRoot}
-      setSource={props.setSource}
-      chooseLibraryRoot={props.chooseLibraryRoot}
-      chooseCheatsRoot={props.chooseCheatsRoot}
-      useLibraryForCheats={props.useLibraryForCheats}
-      scanning={props.scanning}
-      scanLibrary={props.scanLibrary}
-    />
+export const LibraryView = (props: Props) => {
+  const { selectedRoot } = useSourceContext()
+  type SortField = 'id' | 'name' | 'region' | 'type' | 'size' | 'warnings'
+  type SortOrder = 'asc' | 'desc'
 
-    <RemoteSourcesPanel 
-      libraryRoot={props.libraryRoot}
-      onDownloadComplete={props.onRescan}
-    />
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
 
-    {props.root && (
-      <GamesSection
-        games={props.games}
-        scanning={props.scanning}
-        fetchProgress={props.fetchProgress}
-        exporting={props.exporting}
-        exportMsg={props.exportMsg}
-        onRescan={props.onRescan}
-        onAutoFetchMissing={props.onAutoFetchMissing}
-        onExport={props.onExport}
-        onDeleteCover={props.onDeleteCover}
-        onFetchCover={props.onFetchCover}
-        previewCover={props.previewCover}
-        setPreviewCover={props.setPreviewCover}
-        renamePreview={props.renamePreview}
-        onPreviewRenames={props.onPreviewRenames}
-        onApplyRenames={props.onApplyRenames}
-        renaming={props.renaming}
-        root={props.root}
-        onCoverSaved={props.onCoverSaved}
-      />
-    )}
-  </PageLayout>
-)
+  const regionKey = (id?: string): string => (id ? id.slice(0, 4).toUpperCase() : '')
+  const warningCount = (g: GameInfo): number => g.warnings?.length ?? 0
+
+  const filteredSorted = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    const filtered = (props.games || []).filter(g => {
+      if (!q) return true
+      const id = g.id?.toLowerCase() || ''
+      const title = g.title_guess?.toLowerCase() || ''
+      return id.includes(q) || title.includes(q)
+    })
+
+    const compare = (a: GameInfo, b: GameInfo): number => {
+      let cmp = 0
+      switch (sortField) {
+        case 'id':
+          cmp = (a.id || '').localeCompare(b.id || '')
+          break
+        case 'name':
+          cmp = (a.title_guess || '').localeCompare(b.title_guess || '')
+          break
+        case 'region':
+          cmp = regionKey(a.id).localeCompare(regionKey(b.id))
+          break
+        case 'type':
+          cmp = (a.kind || '').localeCompare(b.kind || '')
+          break
+        case 'size':
+          cmp = (a.size || 0) - (b.size || 0)
+          break
+        case 'warnings':
+          cmp = warningCount(a) - warningCount(b)
+          break
+      }
+      return sortOrder === 'asc' ? cmp : -cmp
+    }
+
+    return filtered.sort(compare)
+  }, [props.games, searchQuery, sortField, sortOrder])
+
+  return (
+    <PageLayout title="Library">
+      <div className="row toolbar" style={{ gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <Input
+          placeholder="Search by ID or Title..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ flex: '1 1 280px', minWidth: 220 }}
+        />
+        <Select value={sortField} onChange={(e) => setSortField(e.target.value as SortField)} uiSize="md">
+          <option value="name">Sort by Name</option>
+          <option value="id">Sort by ID</option>
+          <option value="region">Sort by Region</option>
+          <option value="type">Sort by Type</option>
+          <option value="size">Sort by Size</option>
+          <option value="warnings">Sort by Warnings</option>
+        </Select>
+        <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as SortOrder)} uiSize="md">
+          <option value="asc">↑ Asc</option>
+          <option value="desc">↓ Desc</option>
+        </Select>
+      </div>
+
+      <div className="table-wrap">
+        <GamesTable
+          games={filteredSorted}
+          onDelete={props.onDeleteCover}
+          onFetch={props.onFetchCover}
+          oplRoot={selectedRoot || undefined}
+        />
+      </div>
+    </PageLayout>
+  )
+}

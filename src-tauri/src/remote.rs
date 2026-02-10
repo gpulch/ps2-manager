@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use reqwest::blocking::Client;
 use tauri::Emitter;
 use crate::security;
+use crate::transfer;
 
 #[allow(dead_code)] // Reserved for future multi-source support
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,6 +25,8 @@ pub struct RemoteGame {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DownloadProgress {
+  pub file_name: String,
+  pub download_url: String,
   pub downloaded: u64,
   pub total: u64,
   pub percent: f64,
@@ -105,7 +108,9 @@ pub fn download_remote_iso(
     return Err("Destination folder does not exist".into());
   }
 
-  let file_path = dest_path.join(&file_name);
+  let safe_filename = security::sanitize_filename(&file_name)?;
+  let file_path = dest_path.join(&safe_filename);
+  let tmp_path = dest_path.join(format!("{}.part", safe_filename));
   
   // Check if file already exists
   if file_path.exists() {
@@ -126,12 +131,16 @@ pub fn download_remote_iso(
     return Err(format!("Download failed: {}", response.status()));
   }
 
-  let mut file = File::create(&file_path).map_err(|e| e.to_string())?;
+  let mut file = File::create(&tmp_path).map_err(|e| e.to_string())?;
   
-  // Write downloaded content
   response
     .copy_to(&mut file)
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| {
+      let _ = fs::remove_file(&tmp_path);
+      e.to_string()
+    })?;
+
+  fs::rename(&tmp_path, &file_path).map_err(|e| e.to_string())?;
 
   Ok(file_path.to_string_lossy().to_string())
 }
@@ -172,14 +181,14 @@ fn download_remote_iso_blocking(
     fs::create_dir_all(&dest_path).map_err(|e| e.to_string())?;
   }
 
-  // Security: Generate safe path and validate it's within allowed directory
-  let file_path = security::generate_safe_download_path(&dest_path, &safe_filename)?;
-  
-  // Check if file already exists and validate it
-  if file_path.exists() {
-    // Check if it's a complete file by comparing with expected size from a previous download
-    // For now, just warn that file exists
-    return Err(format!("File already exists: {}. Delete it first if you want to re-download.", file_name));
+  // We will determine the final OPL subfolder (DVD/ or CD/) after we know
+  // the file size from the Content-Length header. For now, use the root for
+  // the temp file so the download can start immediately.
+  let tmp_path = dest_path.join(format!("{}.part", safe_filename));
+
+  // Remove any stale temp file from a previous interrupted download
+  if tmp_path.exists() {
+    let _ = fs::remove_file(&tmp_path);
   }
 
   let client = Client::builder()
@@ -215,9 +224,36 @@ fn download_remote_iso_blocking(
       }
     }
   }
+
+  // Route into the correct OPL subfolder (DVD/ or CD/) based on file size
+  let opl_subfolder = transfer::expected_dir_for_size(total_size);
+  let final_dest = dest_path.join(opl_subfolder);
+  fs::create_dir_all(&final_dest).map_err(|e| e.to_string())?;
+
+  // Security: Generate safe path and validate it's within allowed directory
+  let file_path = security::generate_safe_download_path(&final_dest, &safe_filename)?;
   
+  // If a file already exists, decide if we can safely overwrite it
+  if file_path.exists() {
+    match fs::metadata(&file_path) {
+      Ok(meta) => {
+        if meta.len() == total_size {
+          // Looks complete, do not overwrite
+          return Err(format!("File already exists and appears complete: {}", file_name));
+        } else {
+          // Incomplete or mismatched size, remove to allow a clean re-download
+          let _ = fs::remove_file(&file_path);
+        }
+      }
+      Err(_) => {
+        // If we cannot read metadata, attempt to remove and continue
+        let _ = fs::remove_file(&file_path);
+      }
+    }
+  }
+
   let mut downloaded: u64 = 0;
-  let mut file = File::create(&file_path).map_err(|e| e.to_string())?;
+  let mut file = File::create(&tmp_path).map_err(|e| e.to_string())?;
 
   // Throttle progress updates - emit only every 1MB to avoid UI flooding
   let progress_threshold = 1_048_576; // 1 MB
@@ -242,21 +278,25 @@ fn download_remote_iso_blocking(
           };
 
           let progress = DownloadProgress {
+            file_name: safe_filename.clone(),
+            download_url: download_url.clone(),
             downloaded,
             total: total_size,
             percent,
             status: "downloading".to_string(),
           };
 
-          let _ = window.emit("download-progress", &progress);
+          let _ = window.emit("remote-download-progress", &progress);
         }
       }
       Err(e) => {
         // Download interrupted - cleanup incomplete file
-        let _ = fs::remove_file(&file_path);
+        let _ = fs::remove_file(&tmp_path);
         
         // Emit failed status
-        let _ = window.emit("download-progress", &DownloadProgress {
+        let _ = window.emit("remote-download-progress", &DownloadProgress {
+          file_name: safe_filename.clone(),
+          download_url: download_url.clone(),
           downloaded,
           total: total_size,
           percent: (downloaded as f64 / total_size as f64 * 100.0),
@@ -276,7 +316,7 @@ fn download_remote_iso_blocking(
 
   // Validation: Verify download is complete
   if downloaded < total_size {
-    let _ = fs::remove_file(&file_path);
+    let _ = fs::remove_file(&tmp_path);
     return Err(format!(
       "Download incomplete: got {} bytes, expected {} bytes ({}% complete). File has been removed.",
       downloaded,
@@ -284,6 +324,8 @@ fn download_remote_iso_blocking(
       (downloaded as f64 / total_size as f64 * 100.0) as u64
     ));
   }
+
+  fs::rename(&tmp_path, &file_path).map_err(|e| e.to_string())?;
 
   // Double-check: Verify file size on disk
   match fs::metadata(&file_path) {
@@ -305,7 +347,9 @@ fn download_remote_iso_blocking(
   }
 
   // All validations passed - emit completion
-  let _ = window.emit("download-progress", &DownloadProgress {
+  let _ = window.emit("remote-download-progress", &DownloadProgress {
+    file_name: safe_filename.clone(),
+    download_url: download_url.clone(),
     downloaded: total_size,
     total: total_size,
     percent: 100.0,
